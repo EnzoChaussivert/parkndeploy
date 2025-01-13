@@ -12,7 +12,43 @@ env:
   AZURE_RG_NAME: ${{ vars.PROJECT_NAME }}-rg-${{ vars.AZURE_RESOURCE_IDENTIFIER }}
   
 jobs:
+
+  build_frontend_artifact: 
+    runs-on: ubuntu-latest   
+
+    steps:
+    - name: Checkout repository
+      uses: actions/checkout@v4
+
+    - name: Build the app
+      run: npm install && npm run build
+      working-directory: ./frontend
+
+    - name: Archive the build artifact
+      uses: actions/upload-artifact@v4
+      with:
+        name: frontend-artifact
+        path: ./frontend/dist
+
+  build_backend_artifact: 
+    runs-on: ubuntu-latest   
+
+    steps:
+    - name: Checkout repository
+      uses: actions/checkout@v4
+
+    - name: Publish the app
+      run: dotnet publish -c Release --property:PublishDir=publish # Publish the app to the publish folder of the API project
+      working-directory: ./backend # specify where to find the solution file
+
+    - name: Archive the build artifact
+      uses: actions/upload-artifact@v4
+      with:
+        name: backend-artifact
+        path: ./backend/ParkNDeploy.Api/publish
+
   deploy_infrastructure:
+    needs: [build_frontend_artifact, build_backend_artifact]
     runs-on: ubuntu-latest
     environment: production
 
